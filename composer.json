@@ -1,12 +1,13 @@
 {
-    "name": "languara/plugin-core",
-    "keywords": ["Languara", "Core Library"],
+    "name": "languara/core",
+    "keywords": ["Languara", "Translation", "Internationalization"],
     "homepage": "http://languara.com",
-    "description": "Languara core library for the integration plugin.",
+    "description": "Languaras core library.",
+    "license": "MIT",
     "authors": [
         {
-            "name": "Aleksandar Tufekciev",
-            "email": "aleksandar@languara.com"
+            "name": "Languara Development Team",
+            "email": "support@languara.com"
         }
     ],
     "require": {
