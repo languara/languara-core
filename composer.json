@@ -1,0 +1,26 @@
+{
+    "name": "languara/plugin-core",
+    "keywords": ["Languara", "Core Library"],
+    "homepage": "http://languara.com",
+    "description": "Languara core library for the integration plugin.",
+    "authors": [
+        {
+            "name": "Aleksandar Tufekciev",
+            "email": "aleksandar@languara.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload":    {
+        "psr-4": {
+            "Languara\\": ""
+        }
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}
