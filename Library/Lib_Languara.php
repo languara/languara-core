@@ -69,11 +69,11 @@ class Lib_Languara
         
         // get local translations
         if (php_sapi_name() == "cli") {
-            $this->print_message('notice_retrive_data', 'NOTICE');
+            $this->print_message('notice_retrieve_data', 'NOTICE');
             echo PHP_EOL;
             sleep(2);
         }
-		$arr_data = $this->retrive_local_translations();	
+		$arr_data = $this->retrieve_local_translations();	
         
         // show error message if there are invalid codes
         if ($this->invalid_resource_cds)
@@ -125,7 +125,7 @@ class Lib_Languara
         echo ' ['. $data->translation_count .'/'. $this->translations_count .']' . PHP_EOL . PHP_EOL;
 	}
 	
-    protected function retrive_local_translations()
+    protected function retrieve_local_translations()
     {
         // get local locales, resource groups, and translations
 		$dir_iterator = new \DirectoryIterator($this->language_location);		
@@ -140,7 +140,7 @@ class Lib_Languara
 				{                    
 					$arr_locales[$dir->getFilename()] = array();
 					
-					$arr_locales[$dir->getFilename()] = $this->retrive_resource_groups_and_translations($dir->getRealPath());
+					$arr_locales[$dir->getFilename()] = $this->retrieve_resource_groups_and_translations($dir->getRealPath());
 				}
 			}
 		}
@@ -148,7 +148,7 @@ class Lib_Languara
         return $arr_locales;
     }
     
-	protected function retrive_resource_groups_and_translations ($dir_path)
+	protected function retrieve_resource_groups_and_translations ($dir_path)
 	{
 		$dir_iterator = new \DirectoryIterator($dir_path);	
 		$arr_resource_groups = array();
@@ -419,6 +419,15 @@ class Lib_Languara
         // make sure the plugin has a account associated with it
         if (! $this->is_user_registered()) return false;
         
+        // prompt user to push
+        $answer = readline($this->get_message_text('prompt_push_content'));
+        
+        if ($answer == 'yes')
+        {        
+            echo PHP_EOL;
+            $this->upload_local_translations();
+        }
+        
         $result = $this->fetch_endpoint_data('get_translation_quote', 
                 array('project_id' => $this->conf['project_id']), 
                 'post',
@@ -433,8 +442,12 @@ class Lib_Languara
         
         $continue_translating = readline($this->get_message_text('prompt_continue_translating'));
         
-        if ($continue_translating != 'yes') throw new \Exception ($this->get_message_text('error_action_aborted'));
-        
+        if ($continue_translating != 'yes') 
+        {
+            throw new \Exception ($this->get_message_text('error_action_aborted'));
+            return;
+        }
+        die('here');
         // translate project
         $result = $this->fetch_endpoint_data('translate_project', 
                 array('project_id' => $this->conf['project_id'], 'current_price' => $result->translation_price->batch_price), 
