@@ -436,10 +436,12 @@ class Lib_Languara
         if ($continue_translating != 'yes') throw new \Exception ($this->get_message_text('error_action_aborted'));
         
         // translate project
-        $this->fetch_endpoint_data('translate_project', 
+        $result = $this->fetch_endpoint_data('translate_project', 
                 array('project_id' => $this->conf['project_id'], 'current_price' => $result->translation_price->batch_price), 
                 'post',
                 true);
+        
+        echo 'Order Confirmation Number: '. $result->order_number . PHP_EOL;
         
         echo PHP_EOL;
         $this->print_message('success_content_translated_successfully', 'SUCCESS');
