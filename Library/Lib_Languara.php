@@ -43,6 +43,7 @@ class Lib_Languara
 	public function upload_local_translations()
 	{        
         // make sure the plugin has a account associated with it
+        if (! $this->is_user_registered()) return;
         
 		// sanity checks
         if (! $this->language_location)
@@ -75,6 +76,13 @@ class Lib_Languara
         }
 		$arr_data = $this->retrieve_local_translations();	
         
+        // make sure there is content to be pushed
+        if (! $arr_data)
+        {
+            throw new \Exception($this->get_message_text('error_no_local_content') . $this->language_location);
+            return;
+        }
+        
         // show error message if there are invalid codes
         if ($this->invalid_resource_cds)
         {
@@ -102,7 +110,7 @@ class Lib_Languara
             $proceed = readline($this->get_message_text('prompt_proceed_with_upload'));
             
             if ($proceed != 'yes') throw new \Exception ($this->get_message_text('error_action_aborted'));
-        }        
+        }   
         
         // get project locales
         if (php_sapi_name() == "cli") {
@@ -130,14 +138,14 @@ class Lib_Languara
         // get local locales, resource groups, and translations
 		$dir_iterator = new \DirectoryIterator($this->language_location);		
 		$arr_locales = array();
-		
+        
 		foreach ($dir_iterator as $dir)
-		{			
+		{   
 			// skip the system files for navigation and language_backup directory
 			if($dir->getFilename() != '.' && $dir->getFilename() != '..' && $dir->getFilename() != 'language_backup')
 			{
 				if ($dir->isDir())
-				{                    
+				{                
 					$arr_locales[$dir->getFilename()] = array();
 					
 					$arr_locales[$dir->getFilename()] = $this->retrieve_resource_groups_and_translations($dir->getRealPath());
@@ -152,13 +160,17 @@ class Lib_Languara
 	{
 		$dir_iterator = new \DirectoryIterator($dir_path);	
 		$arr_resource_groups = array();
-		
+        
 		foreach ($dir_iterator as $file)
 		{            
             $lang = null;
             
 			// skip system files
 			if ($file->getFilename() == '.' || $file->getFilename() == '..' || $file->getFilename() == 'language_backup') continue;
+            
+            $arr_path_parts = pathinfo($file->getRealPath());
+            if ($arr_path_parts['extension'] != 'php') continue;
+            
 			if ($this->conf['storage_engine'] == 'php_assoc_array') include ($file->getRealPath());
 			if ($this->conf['storage_engine'] == 'php_array') $lang = include ($file->getRealPath());
             
@@ -447,7 +459,7 @@ class Lib_Languara
             throw new \Exception ($this->get_message_text('error_action_aborted'));
             return;
         }
-        die('here');
+        
         // translate project
         $result = $this->fetch_endpoint_data('translate_project', 
                 array('project_id' => $this->conf['project_id'], 'current_price' => $result->translation_price->batch_price), 
@@ -808,8 +820,8 @@ class Lib_Languara
         // make sure the user is registered and has a config file
         if (! $this->conf)
         {
-            $continue_ind = readline($this->get_message_text('prompt_register_before_continue'));
-            if ($continue_ind != 'yes') throw new \Exception($this->get_message_text('error_action_aborted'));
+            $this->print_message('notice_no_account_associated', 'NOTICE');
+            echo PHP_EOL.PHP_EOL;
             
             try
             {
