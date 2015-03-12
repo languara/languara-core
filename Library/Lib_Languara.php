@@ -423,7 +423,6 @@ class Lib_Languara
         
         // now update the config files
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
-        $this->update_config_file($this->config_files['static_resources'], $config->static_resources);
     }
     
     public function translate()
