@@ -414,7 +414,7 @@ class Lib_Languara
         }
         
         $password = readline($this->get_message_text('prompt_enter_password'));
-        while (!filter_var($password, FILTER_VALIDATE_EMAIL))
+        while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($first_name)))
         {
             $this->print_message("prompt_password_validation");
             echo PHP_EOL;
