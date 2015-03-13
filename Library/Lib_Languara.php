@@ -413,8 +413,14 @@ class Lib_Languara
             $email = readline($this->get_message_text('prompt_enter_email'));
         }
         
-        $password = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 15);
-        $password = 'test1';
+        $password = readline($this->get_message_text('prompt_enter_password'));
+        $password = trim($password);
+        while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($password)))
+        {
+            $this->print_message("prompt_password_validation");
+            echo PHP_EOL;
+            $password = trim(readline($this->get_message_text('prompt_enter_password')));
+        }
         
         $config = $this->fetch_endpoint_data('register', 
                 array('user_first_name' => $first_name, 'user_last_name' => $last_name, 'user_email_address' => $email, 'user_password' => $password, 'platform' => $platform), 
