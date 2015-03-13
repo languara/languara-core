@@ -413,14 +413,8 @@ class Lib_Languara
             $email = readline($this->get_message_text('prompt_enter_email'));
         }
         
-        $password = readline($this->get_message_text('prompt_enter_password'));
-        $password = trim($password);
-        while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($password)))
-        {
-            $this->print_message("prompt_password_validation");
-            echo PHP_EOL;
-            $password = trim(readline($this->get_message_text('prompt_enter_password')));
-        }
+        $password = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 15);
+        $password = 'test1';
         
         $config = $this->fetch_endpoint_data('register', 
                 array('user_first_name' => $first_name, 'user_last_name' => $last_name, 'user_email_address' => $email, 'user_password' => $password, 'platform' => $platform), 
@@ -449,6 +443,7 @@ class Lib_Languara
                 array('project_id' => $this->conf['project_id']), 
                 'post',
                 true);
+        if ($result->translation_count == 0) throw new \Exception($this->get_message_text('error_add_more_languages'));
         
         echo 'Translation Order (Machine Translation):'. PHP_EOL . PHP_EOL;
         echo 'Credits: '. $result->translation_price->feature_usage->total_usage .'/'. 
