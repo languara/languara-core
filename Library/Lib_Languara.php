@@ -450,12 +450,32 @@ class Lib_Languara
                 true);
         if ($result->translation_count == 0) throw new \Exception($this->get_message_text('error_add_more_languages'));
         
-        echo 'Translation Order (Machine Translation):'. PHP_EOL . PHP_EOL;
-        echo 'Credits: '. $result->translation_price->feature_usage->total_usage .'/'. 
-                $result->translation_price->feature_usage->total_capacity .' Words'. PHP_EOL;
-        echo 'Pricing: '. $result->translation_price->feature_pricing->feature_overage_batch_price_usd .'$ /'. 
-                $result->translation_price->feature_pricing->feature_overage_batch_size .'/ Words' . PHP_EOL;
-        echo 'Pay: $'. $result->translation_price->batch_price .' to translate '. $result->translation_price->word_count .' Words'.PHP_EOL.PHP_EOL;
+        echo PHP_EOL;
+        $this->print_message('notice_requested_translations', 'NOTICE');
+        echo $result->word_count .' word(s)'. PHP_EOL;
+        $this->print_message('notice_credits_remaining', 'NOTICE');
+        echo $result->word_capacity .' word(s)'. PHP_EOL . PHP_EOL;
+        
+        // if there is no overage
+        if ($result->overage_ind)
+        {
+            $this->print_message('notice_current_rate', 'NOTICE');
+            echo '$'. $result->feature_batch_price .' for '. $result->feature_batch .' word(s)'.PHP_EOL . PHP_EOL;
+            $this->print_message('notice_plans_and_pricing', 'NOTICE');
+            echo PHP_EOL . PHP_EOL;
+            $this->print_message('notice_account_charge', 'NOTICE');
+            echo '$'. $result->charge .PHP_EOL . PHP_EOL;
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE');
+            echo $result->remaining_capacity_with_overage .' word(s)'.PHP_EOL;
+        }
+        else
+        {
+            $this->print_message('notice_no_charge', 'NOTICE');
+            echo PHP_EOL . PHP_EOL;
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE');
+            echo $result->remaining_capacity .' word(s)'. PHP_EOL;
+        }
+        
         
         $continue_translating = readline($this->get_message_text('prompt_continue_translating'));
         
@@ -467,7 +487,7 @@ class Lib_Languara
         
         // translate project
         $result = $this->fetch_endpoint_data('translate_project', 
-                array('project_id' => $this->conf['project_id'], 'current_price' => $result->translation_price->batch_price), 
+                array('project_id' => $this->conf['project_id'], 'current_price' => $result->charge), 
                 'post',
                 true);
         
