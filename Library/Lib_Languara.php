@@ -33,7 +33,7 @@ class Lib_Languara
     
     public function check_auth($external_request_id, $client_signature)
     {
-        if ($client_signature != base64_ENCODE(hash_hmac('sha256', $external_request_id, $this->conf['project_api_secret'], true))) return false;
+        if ($client_signature != base64_ENCODE(hash_hmac('sha256', $external_request_id, $this->conf['project_api_secret'], true))) throw new \Exception ('Authentication failed!');
         
         $this->external_request_id = $external_request_id;
         
@@ -206,34 +206,6 @@ class Lib_Languara
 	{
         // make sure the plugin has a account associated with it
         if (! $this->is_user_registered()) return;
-        
-        // make sure the user is registered and has a config file
-        if (! $this->conf)
-        {
-            $continue_ind = readline($this->get_message_text('prompt_register_before_continue'));
-            if ($continue_ind != 'yes') throw new \Exception($this->get_message_text('error_action_aborted'));
-            
-            try
-            {
-                $this->register($this->platform);
-            }
-            catch (\Exception $e) 
-            {
-                throw new \Exception($e->getMessage());
-                return;
-            }
-            
-            // if registration is successfull, tell the user and load the config
-            \Config::load('languara', null, true, true);
-            
-            $this->language_location = APPPATH . \Config::get('language_location');
-            $this->conf = \Config::get('conf');
-            
-            echo PHP_EOL;
-            $this->print_message("success_registration_completed", 'SUCCESS');
-            echo PHP_EOL . PHP_EOL;
-            sleep(2);
-        }
         
 		// sanity checks
         if (! $this->language_location)
@@ -859,10 +831,7 @@ class Lib_Languara
             }
             
             // if registration is successfull, tell the user and load the config
-            \Config::load('languara', null, true, true);
-            
-            $this->language_location = APPPATH . \Config::get('language_location');
-            $this->conf = \Config::get('conf');
+            $this->load_config_file();
             
             echo PHP_EOL;
             $this->print_message("success_registration_completed", 'SUCCESS');
@@ -872,6 +841,9 @@ class Lib_Languara
         
         return true;
     }
+    
+    protected function load_config_file()
+    {}
     
     public function print_message($message_code, $message_status = null)
     {
