@@ -1,8 +1,8 @@
 {
     "name": "languara/core",
-    "keywords": ["Languara", "Translation", "Internationalization"],
+    "keywords": ["Languara", "Translation", "Internationalization", "Localization", "Automated Human Translation", "Automated Machine Translation"],
     "homepage": "http://languara.com",
-    "description": "Languaras core library.",
+    "description": "Languara core library.",
     "license": "MIT",
     "authors": [
         {
