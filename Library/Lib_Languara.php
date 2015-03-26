@@ -123,14 +123,15 @@ class Lib_Languara
         $resource_group_count   = count($this->resource_groups);
         
 		$data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
-        
-        echo PHP_EOL;
-        $this->print_message('notice_languages_pushed', 'NOTICE');
-        echo ' ['. $locales_count .'/'. $locales_count .']' . PHP_EOL . PHP_EOL;
-        $this->print_message('notice_resource_groups_pushed', 'NOTICE');
-        echo ' ['. $data->resource_group_count .'/'. $resource_group_count .']' . PHP_EOL . PHP_EOL;
-        $this->print_message('notice_translations_pushed', 'NOTICE');
-        echo ' ['. $data->translation_count .'/'. $this->translations_count .']' . PHP_EOL . PHP_EOL;
+        if (php_sapi_name() == "cli") {
+            echo PHP_EOL;
+            $this->print_message('notice_languages_pushed', 'NOTICE');
+            echo ' ['. $locales_count .'/'. $locales_count .']' . PHP_EOL . PHP_EOL;
+            $this->print_message('notice_resource_groups_pushed', 'NOTICE');
+            echo ' ['. $data->resource_group_count .'/'. $resource_group_count .']' . PHP_EOL . PHP_EOL;
+            $this->print_message('notice_translations_pushed', 'NOTICE');
+            echo ' ['. $data->translation_count .'/'. $this->translations_count .']' . PHP_EOL . PHP_EOL;
+        }
 	}
 	
     protected function retrieve_local_translations()
@@ -252,19 +253,25 @@ class Lib_Languara
 			return false;
 		}
         
-        $this->print_message('notice_languages_downloaded', 'NOTICE');
-        echo count((array) $this->arr_project_locales) . PHP_EOL.PHP_EOL;
+        if (php_sapi_name() == "cli") {
+            $this->print_message('notice_languages_downloaded', 'NOTICE');
+            echo count((array) $this->arr_project_locales) . PHP_EOL.PHP_EOL;
+        }
         
         // get project resource groups
-        if (php_sapi_name() == "cli") {
+        if (php_sapi_name() == "cli")
+        {
             $this->print_message("notice_retrieve_resource_groups", 'NOTICE');
             echo PHP_EOL;
             sleep(2);
         }
-		$this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
-        
-        $this->print_message('notice_resource_groups_downloaded', 'NOTICE');
-        echo count($this->arr_resource_groups). PHP_EOL.PHP_EOL;
+        $this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
+
+        if (php_sapi_name() == "cli")
+        {
+            $this->print_message('notice_resource_groups_downloaded', 'NOTICE');
+            echo count($this->arr_resource_groups). PHP_EOL.PHP_EOL;
+        }
         
         // get project translations
         if (php_sapi_name() == "cli")
@@ -275,11 +282,15 @@ class Lib_Languara
         }
         $this->arr_translations	= $this->fetch_endpoint_data('translation', null, 'get', true);
         
-        $this->print_message('notice_translations_downloaded', 'NOTICE');
-        echo count($this->arr_translations) . PHP_EOL.PHP_EOL;
+        if (php_sapi_name() == "cli")
+        {
+            $this->print_message('notice_translations_downloaded', 'NOTICE');
+            echo count($this->arr_translations) . PHP_EOL.PHP_EOL;
+        }
         
 		// back up local data
-        if (php_sapi_name() == "cli") {
+        if (php_sapi_name() == "cli") 
+        {
             $this->print_message("notice_backing_up_data", 'NOTICE');
             echo PHP_EOL;
             sleep(2);
