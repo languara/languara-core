@@ -4,6 +4,7 @@
     "homepage": "http://languara.com",
     "description": "Languara core library.",
     "license": "MIT",
+    "type" : "library",
     "authors": [
         {
             "name": "Languara Development Team",
