@@ -108,11 +108,11 @@ class Lib_Languara {
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
         if ($this->is_cli) {
             $this->print_message();
-            $this->print_message('notice_languages_pushed', 'NOTICE');
+            $this->print_message('notice_languages_pushed', 'NOTICE',false);
             $this->print_message(' [' . $locales_count . '/' . $locales_count . ']');
-            $this->print_message('notice_resource_groups_pushed', 'NOTICE');
+            $this->print_message('notice_resource_groups_pushed', 'NOTICE',false);
             $this->print_message(' [' . $data->resource_group_count . '/' . $resource_group_count . ']' );
-            $this->print_message('notice_translations_pushed', 'NOTICE');
+            $this->print_message('notice_translations_pushed', 'NOTICE',false);
             $this->print_message(' [' . $data->translation_count . '/' . $this->translations_count . ']');
         }
     }
@@ -385,7 +385,6 @@ class Lib_Languara {
             $this->print_message($result->remaining_capacity_with_overage . ' word(s)');
         } else {
             $this->print_message('notice_no_charge', 'NOTICE');
-            $this->print_message(PHP_EOL);
             $this->print_message('notice_credits_remain_after_transaction', 'NOTICE',false);
             $this->print_message($result->remaining_capacity . ' word(s)');
         }
