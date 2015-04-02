@@ -386,7 +386,7 @@ class Lib_Languara {
         } else {
             $this->print_message('notice_no_charge', 'NOTICE');
             $this->print_message(PHP_EOL);
-            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE');
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE',false);
             $this->print_message($result->remaining_capacity . ' word(s)');
         }
 
