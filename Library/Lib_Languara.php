@@ -460,7 +460,7 @@ class Lib_Languara {
 
             // if the request faild throw an exception
             if ($error) {
-                throw new \Exception($this->get_message_text('error_languara_servers_respond') . PHP_EOL . current(current($messages->errors)) . $error_message_suffix);
+                throw new \Exception($this->get_message_text('error_languara_servers_respond') .' '. current(current($messages->errors)) . $error_message_suffix);
             }
             
             // if no errors, we need to extract the data
