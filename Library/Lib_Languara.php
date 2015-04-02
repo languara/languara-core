@@ -225,9 +225,9 @@ class Lib_Languara {
         }
 
         if ($this->is_cli) {
-            $language_list_message = implode(",",(array) array_keys((array) $this->arr_project_locales));
+            $language_list_message = count((array) $this->arr_project_locales);
 
-            $this->print_message('notice_languages_downloaded', 'NOTICE');
+            $this->print_message('notice_languages_downloaded', 'NOTICE',false);
             $this->print_message($language_list_message);
         }
 
@@ -240,7 +240,7 @@ class Lib_Languara {
         
         $this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
 
-        $this->print_message('notice_resource_groups_downloaded', 'NOTICE');
+        $this->print_message('notice_resource_groups_downloaded', 'NOTICE',false);
         $this->print_message(count($this->arr_resource_groups));
 
         // get project translations
@@ -252,7 +252,7 @@ class Lib_Languara {
         
         $this->arr_translations = $this->fetch_endpoint_data('translation', null, 'get', true);
 
-        $this->print_message('notice_translations_downloaded', 'NOTICE');
+        $this->print_message('notice_translations_downloaded', 'NOTICE',false);
         $this->print_message(count($this->arr_translations));
 
         // back up local data
@@ -756,7 +756,7 @@ class Lib_Languara {
         
     }
 
-    public function print_message($message_code, $message_status = "NOTICE", $output_eol = true) {
+    public function print_message($message_code, $message_status = "null", $output_eol = true) {
         if ($this->is_cli) {
             $message = $this->get_message_text($message_code);
             echo $this->color_text($message, $message_status);
