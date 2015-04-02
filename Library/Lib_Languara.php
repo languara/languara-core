@@ -21,6 +21,11 @@ class Lib_Languara {
     public $resource_groups = null;
     public $translations_count = 0;
     public $invalid_resource_cds = array();
+    public $is_cli;
+    
+    function __construct() {
+        $this->is_cli = (php_sapi_name() == "cli");
+    }
 
     public function check_auth($external_request_id, $client_signature) {
         if ($client_signature != base64_ENCODE(hash_hmac('sha256', $external_request_id, $this->conf['project_api_secret'], true)))
@@ -45,7 +50,7 @@ class Lib_Languara {
         if (!is_dir($this->language_location)) {
             $show_exception_ind = true;
 
-            if (php_sapi_name() == "cli") {
+            if ($this->is_cli) {
                 $show_exception_ind = $this->create_language_dir();
             }
 
@@ -56,11 +61,8 @@ class Lib_Languara {
         }
 
         // get local translations
-        if (php_sapi_name() == "cli") {
-            $this->print_message('notice_retrieve_data', 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        $this->print_message('notice_retrieve_data', 'NOTICE');
+        
         $arr_data = $this->retrieve_local_translations();
 
         // make sure there is content to be pushed
@@ -71,26 +73,25 @@ class Lib_Languara {
 
         // show error message if there are invalid codes
         if ($this->invalid_resource_cds) {
-            echo PHP_EOL;
             $this->print_message('error_malformed_resource_cd', 'FAILURE');
-            echo PHP_EOL . PHP_EOL;
 
             $i = 0;
 
             // show resource codes with errors in them
             foreach ($this->invalid_resource_cds as $resource_cd) {
-                if ($i++ == 10)
+                if ($i++ == 10) {
                     break;
-                echo $resource_cd['resource_group_name'] . '.' . $resource_cd['resource_cd'] . PHP_EOL;
+                }
+                $this->print_message($resource_cd['resource_group_name'] . '.' . $resource_cd['resource_cd']);
             }
 
             // if there are more then 10 resource codes
-            if (count($this->invalid_resource_cds) > 10)
-                echo '...and ' . (count($this->invalid_resource_cds) - 10) . ' more!' . PHP_EOL;
+            if (count($this->invalid_resource_cds) > 10) {
+                $this->print_message('...and ' . (count($this->invalid_resource_cds) - 10) . ' more!');
+            }
+                
 
-            echo PHP_EOL;
             $this->print_message('notice_resource_cd_help_link', 'NOTICE');
-            echo PHP_EOL;
 
             // proceed only if user confirms
             $proceed = readline($this->get_message_text('prompt_proceed_with_upload'));
@@ -100,24 +101,20 @@ class Lib_Languara {
         }
 
         // get project locales
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_pushing_content", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        $this->print_message("notice_pushing_content", 'NOTICE');
 
         $locales_count = count($arr_data);
         $resource_group_count = count($this->resource_groups);
 
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
-        if (php_sapi_name() == "cli") {
+        if ($this->is_cli) {
             echo PHP_EOL;
             $this->print_message('notice_languages_pushed', 'NOTICE');
-            echo ' [' . $locales_count . '/' . $locales_count . ']' . PHP_EOL . PHP_EOL;
+            $this->print_message(' [' . $locales_count . '/' . $locales_count . ']');
             $this->print_message('notice_resource_groups_pushed', 'NOTICE');
-            echo ' [' . $data->resource_group_count . '/' . $resource_group_count . ']' . PHP_EOL . PHP_EOL;
+            $this->print_message(' [' . $data->resource_group_count . '/' . $resource_group_count . ']' );
             $this->print_message('notice_translations_pushed', 'NOTICE');
-            echo ' [' . $data->translation_count . '/' . $this->translations_count . ']' . PHP_EOL . PHP_EOL;
+            $this->print_message(' [' . $data->translation_count . '/' . $this->translations_count . ']');
         }
     }
 
@@ -202,7 +199,7 @@ class Lib_Languara {
         if (!is_dir($this->language_location)) {
             $show_exception_ind = true;
 
-            if (php_sapi_name() == "cli") {
+            if ($this->is_cli) {
                 $show_exception_ind = $this->create_language_dir();
             }
 
@@ -218,11 +215,7 @@ class Lib_Languara {
         }
 
         // get project locales
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_retrieve_languages", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        //        $this->print_message("notice_retrieve_languages", 'NOTICE');
 
         $this->arr_project_locales = $this->fetch_endpoint_data('project_locale', null, 'get', true);
 
@@ -231,43 +224,39 @@ class Lib_Languara {
             return false;
         }
 
-        if (php_sapi_name() == "cli") {
+        if ($this->is_cli) {
+            $language_list_message = implode(",",(array) array_keys((array) $this->arr_project_locales));
+
             $this->print_message('notice_languages_downloaded', 'NOTICE');
-            echo count((array) $this->arr_project_locales) . PHP_EOL . PHP_EOL;
+            $this->print_message($language_list_message);
         }
 
         // get project resource groups
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_retrieve_resource_groups", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+//        if ($this->is_cli) {
+//            $this->print_message("notice_retrieve_resource_groups", 'NOTICE');
+//            echo PHP_EOL;
+//            sleep(2);
+//        }
+        
         $this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
 
-        if (php_sapi_name() == "cli") {
-            $this->print_message('notice_resource_groups_downloaded', 'NOTICE');
-            echo count($this->arr_resource_groups) . PHP_EOL . PHP_EOL;
-        }
+        $this->print_message('notice_resource_groups_downloaded', 'NOTICE');
+        $this->print_message(count($this->arr_resource_groups));
 
         // get project translations
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_retrieve_translations", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+//        if ($this->is_cli) {
+//            $this->print_message("notice_retrieve_translations", 'NOTICE');
+//            echo PHP_EOL;
+//            sleep(2);
+//        }
+        
         $this->arr_translations = $this->fetch_endpoint_data('translation', null, 'get', true);
 
-        if (php_sapi_name() == "cli") {
-            $this->print_message('notice_translations_downloaded', 'NOTICE');
-            echo count($this->arr_translations) . PHP_EOL . PHP_EOL;
-        }
+        $this->print_message('notice_translations_downloaded', 'NOTICE');
+        $this->print_message(count($this->arr_translations));
 
         // back up local data
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_backing_up_data", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        $this->print_message("notice_backing_up_data", 'NOTICE');
 
         // create back dir if it doesn't exist
         $this->create_dir($this->language_location, 'language_backup');
@@ -292,19 +281,11 @@ class Lib_Languara {
         }
 
         // remove local translations
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_removing_files", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        $this->print_message("notice_removing_files", 'NOTICE');
         $this->remove_local_translations($this->language_location);
 
         // get project translations
-        if (php_sapi_name() == "cli") {
-            $this->print_message("notice_adding_content", 'NOTICE');
-            echo PHP_EOL;
-            sleep(2);
-        }
+        $this->print_message("notice_adding_content", 'NOTICE');
         $this->add_translations_to_files();
 
         return true;
@@ -775,11 +756,16 @@ class Lib_Languara {
         
     }
 
-    public function print_message($message_code, $message_status = null) {
-        $message = $this->get_message_text($message_code);
-        echo $this->color_text($message, $message_status);
+    public function print_message($message_code, $message_status = "NOTICE", $output_eol = true) {
+        if ($this->is_cli) {
+            $message = $this->get_message_text($message_code);
+            echo $this->color_text($message, $message_status);
+            if ($output_eol) {
+                echo PHP_EOL;
+            }
+        }
     }
-
+    
     public function get_message_text($message_code) {
         return (isset($this->arr_messages[$message_code])) ? $this->arr_messages[$message_code] : $message_code;
     }
