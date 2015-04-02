@@ -294,7 +294,7 @@ class Lib_Languara {
     protected function add_translations_to_files() {
         // process locale
         foreach ($this->arr_project_locales as $project_locale) {
-            $this->print_message("   ".$project_locale->iso_639_1,"NOTICE",false);
+            $this->print_message("+= ".$project_locale->iso_639_1,"NOTICE",false);
             $this->print_message(' [' . $project_locale->locale_name_eng . ']');
             
             $this->create_dir($this->language_location, strtolower($project_locale->iso_639_1));
