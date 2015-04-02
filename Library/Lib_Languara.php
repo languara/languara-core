@@ -94,9 +94,8 @@ class Lib_Languara {
             $this->print_message('notice_resource_cd_help_link', 'NOTICE');
 
             // proceed only if user confirms
-            $proceed = readline($this->get_message_text('prompt_proceed_with_upload'));
-
-            if ($proceed != 'yes')
+            $proceed = strtolower(readline($this->get_message_text('prompt_proceed_with_upload')));
+            if ($proceed != 'y')
                 throw new \Exception($this->get_message_text('error_action_aborted'));
         }
 
@@ -108,7 +107,7 @@ class Lib_Languara {
 
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
         if ($this->is_cli) {
-            echo PHP_EOL;
+            $this->print_message();
             $this->print_message('notice_languages_pushed', 'NOTICE');
             $this->print_message(' [' . $locales_count . '/' . $locales_count . ']');
             $this->print_message('notice_resource_groups_pushed', 'NOTICE');
@@ -275,8 +274,8 @@ class Lib_Languara {
 
         // check if zip file exists, if it doesn't complain
         if (!is_file($zip_full_path) && $zipped_files_count > 0) {
-            $continue_ind = readline($this->get_message_text('prompt_no_backup_proceed'));
-            if ($continue_ind != 'yes')
+            $continue_ind = strtolower(readline($this->get_message_text('prompt_no_backup_proceed')));
+            if ($continue_ind != 'y')
                 throw new \Exception($this->get_message_text('error_action_aborted'));
         }
 
@@ -316,34 +315,31 @@ class Lib_Languara {
     }
 
     public function register($platform = null) {
-        if (!isset($platform))
+        if (!isset($platform)) {
             throw new \Exception('error_plugin_problem');
-
+        }
+        
         $first_name = readline($this->get_message_text('prompt_enter_first_name'));
         while (!preg_match("/^[a-zA-Z]+$/", trim($first_name))) {
             $this->print_message("prompt_first_name_validation");
-            echo PHP_EOL;
             $first_name = readline($this->get_message_text('prompt_enter_first_name'));
         }
 
         $last_name = readline($this->get_message_text('prompt_enter_last_name'));
         while (!preg_match("/^[a-zA-Z]+$/", trim($last_name))) {
             $this->print_message("prompt_last_name_validation");
-            echo PHP_EOL;
             $last_name = readline($this->get_message_text('prompt_enter_last_name'));
         }
 
         $email = readline($this->get_message_text('prompt_enter_email'));
         while (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->print_message("prompt_email_validation");
-            echo PHP_EOL;
             $email = readline($this->get_message_text('prompt_enter_email'));
         }
 
         $password = readline($this->get_message_text('prompt_enter_password'));
         while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($password))) {
             $this->print_message("prompt_password_validation");
-            echo PHP_EOL;
             $password = readline($this->get_message_text('prompt_enter_password'));
         }
 
@@ -355,22 +351,23 @@ class Lib_Languara {
 
     public function translate() {
         // make sure the plugin has a account associated with it
-        if (!$this->is_user_registered())
+        if (!$this->is_user_registered()) {
             return false;
+        }
 
         // prompt user to push
-        $answer = readline($this->get_message_text('prompt_push_content'));
-
-        if ($answer == 'yes') {
-            echo PHP_EOL;
+        $answer = strtolower(readline($this->get_message_text('prompt_push_content')));
+        if ($answer == 'y') {
+            $this->print_message();
             $this->upload_local_translations();
         }
 
         $result = $this->fetch_endpoint_data('get_translation_quote', array('project_id' => $this->conf['project_id']), 'post', true);
-        if ($result->translation_count == 0)
+        if ($result->translation_count == 0) 
+        {    
             throw new \Exception($this->get_message_text('error_add_more_languages'));
-
-        echo PHP_EOL;
+        }
+        
         $this->print_message('notice_requested_translations', 'NOTICE',false);
         $this->print_message($result->word_count . ' word(s)');
         $this->print_message('notice_credits_remaining', 'NOTICE',false);
@@ -394,9 +391,8 @@ class Lib_Languara {
         }
 
 
-        $continue_translating = readline($this->get_message_text('prompt_continue_translating'));
-
-        if ($continue_translating != 'yes') {
+        $continue_translating = strtolower(readline($this->get_message_text('prompt_continue_translating')));
+        if ($continue_translating != 'y') {
             throw new \Exception($this->get_message_text('error_action_aborted'));
             return;
         }
@@ -409,9 +405,8 @@ class Lib_Languara {
 
         
         // prompt user to pull
-        $answer = readline($this->get_message_text('prompt_pull_content'));
-
-        if ($answer != 'yes') {
+        $answer = strtolower(readline($this->get_message_text('prompt_pull_content')));
+        if ($answer != 'y') {
             return true;
         }
 
@@ -465,9 +460,10 @@ class Lib_Languara {
             }
 
             // if the request faild throw an exception
-            if ($error)
+            if ($error) {
                 throw new \Exception($this->get_message_text('error_languara_servers_respond') . PHP_EOL . current(current($messages->errors)) . $error_message_suffix);
-
+            }
+            
             // if no errors, we need to extract the data
             if (is_object($result)) {
                 $result = current($result);
@@ -617,15 +613,14 @@ class Lib_Languara {
         $question = $this->color_text($this->get_message_text('prompt_create_language_dir'), 'SUCCESS');
         $lang_location = $this->color_text($this->language_location, 'NOTICE');
 
-        $answer = readline($question . ' [' . $lang_location . ']: ');
-        $answer = strtolower($answer);
-
-        while ($answer != 'yes' && $answer != 'no') {
-            $answer = strtolower(readline('[yes/no]: '));
+        $answer = strtolower(readline($question . ' [' . $lang_location . ']: '));
+        while ($answer != 'y' && $answer != 'n') {
+            $answer = strtolower(readline('[y/n]: '));
         }
 
-        if ($answer == 'no')
+        if ($answer == 'n') {
             return true;
+        }
 
         $arr_language_dir_parts = explode('/', $this->language_location);
         $dir_name = array_pop($arr_language_dir_parts);
@@ -730,7 +725,6 @@ class Lib_Languara {
         // make sure the user is registered and has a config file
         if (!$this->conf) {
             $this->print_message('notice_no_account_associated', 'NOTICE');
-            echo PHP_EOL . PHP_EOL;
 
             try {
                 $this->register($this->platform);
@@ -742,10 +736,7 @@ class Lib_Languara {
             // if registration is successfull, tell the user and load the config
             $this->load_config_file();
 
-            echo PHP_EOL;
             $this->print_message("success_registration_completed", 'SUCCESS');
-            echo PHP_EOL . PHP_EOL;
-            sleep(2);
         }
 
         return true;
