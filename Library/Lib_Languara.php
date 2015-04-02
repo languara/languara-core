@@ -746,7 +746,7 @@ class Lib_Languara {
         
     }
 
-    public function print_message($message_code, $message_status = "null", $output_eol = true) {
+    public function print_message($message_code="", $message_status = "null", $output_eol = true) {
         if ($this->is_cli) {
             $message = $this->get_message_text($message_code);
             echo $this->color_text($message, $message_status);
