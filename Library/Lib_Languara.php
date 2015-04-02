@@ -22,7 +22,7 @@ class Lib_Languara {
     public $translations_count = 0;
     public $invalid_resource_cds = array();
     public $is_cli;
-    
+
     function __construct() {
         $this->is_cli = (php_sapi_name() == "cli");
     }
@@ -62,7 +62,7 @@ class Lib_Languara {
 
         // get local translations
         $this->print_message('notice_retrieve_data', 'NOTICE');
-        
+
         $arr_data = $this->retrieve_local_translations();
 
         // make sure there is content to be pushed
@@ -89,7 +89,7 @@ class Lib_Languara {
             if (count($this->invalid_resource_cds) > 10) {
                 $this->print_message('...and ' . (count($this->invalid_resource_cds) - 10) . ' more!');
             }
-                
+
 
             $this->print_message('notice_resource_cd_help_link', 'NOTICE');
 
@@ -108,11 +108,11 @@ class Lib_Languara {
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
         if ($this->is_cli) {
             $this->print_message();
-            $this->print_message('notice_languages_pushed', 'NOTICE',false);
+            $this->print_message('notice_languages_pushed', 'NOTICE', false);
             $this->print_message(' [' . $locales_count . '/' . $locales_count . ']');
-            $this->print_message('notice_resource_groups_pushed', 'NOTICE',false);
-            $this->print_message(' [' . $data->resource_group_count . '/' . $resource_group_count . ']' );
-            $this->print_message('notice_translations_pushed', 'NOTICE',false);
+            $this->print_message('notice_resource_groups_pushed', 'NOTICE', false);
+            $this->print_message(' [' . $data->resource_group_count . '/' . $resource_group_count . ']');
+            $this->print_message('notice_translations_pushed', 'NOTICE', false);
             $this->print_message(' [' . $data->translation_count . '/' . $this->translations_count . ']');
         }
     }
@@ -217,18 +217,19 @@ class Lib_Languara {
         //        $this->print_message("notice_retrieve_languages", 'NOTICE');
 
         $this->arr_project_locales = $this->fetch_endpoint_data('project_locale', null, 'get', true);
-
         if (!$this->arr_project_locales) {
             throw new \Exception($this->get_message_text('error_project_no_languages'));
             return false;
         }
+        //var_dump($this->arr_project_locales);
 
-        if ($this->is_cli) {
-            $language_list_message = count((array) $this->arr_project_locales);
+        $language_list_message = count((array) $this->arr_project_locales);
+        $this->print_message('notice_languages_downloaded', 'NOTICE', false);
+        $this->print_message($language_list_message);
+//        foreach ((array) $this->arr_project_locales as $tmp_lang) {
+//            $this->print_message("\t" . $tmp_lang->iso_639_1 . ' [' . $tmp_lang->locale_name_eng . ']');
+//        }
 
-            $this->print_message('notice_languages_downloaded', 'NOTICE',false);
-            $this->print_message($language_list_message);
-        }
 
         // get project resource groups
 //        if ($this->is_cli) {
@@ -236,10 +237,10 @@ class Lib_Languara {
 //            echo PHP_EOL;
 //            sleep(2);
 //        }
-        
+
         $this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
 
-        $this->print_message('notice_resource_groups_downloaded', 'NOTICE',false);
+        $this->print_message('notice_resource_groups_downloaded', 'NOTICE', false);
         $this->print_message(count($this->arr_resource_groups));
 
         // get project translations
@@ -248,10 +249,10 @@ class Lib_Languara {
 //            echo PHP_EOL;
 //            sleep(2);
 //        }
-        
+
         $this->arr_translations = $this->fetch_endpoint_data('translation', null, 'get', true);
 
-        $this->print_message('notice_translations_downloaded', 'NOTICE',false);
+        $this->print_message('notice_translations_downloaded', 'NOTICE', false);
         $this->print_message(count($this->arr_translations));
 
         // back up local data
@@ -293,6 +294,9 @@ class Lib_Languara {
     protected function add_translations_to_files() {
         // process locale
         foreach ($this->arr_project_locales as $project_locale) {
+            $this->print_message("   ".$project_locale->iso_639_1,"NOTICE",false);
+            $this->print_message(' [' . $project_locale->locale_name_eng . ']');
+            
             $this->create_dir($this->language_location, strtolower($project_locale->iso_639_1));
 
             // process translations
@@ -306,11 +310,13 @@ class Lib_Languara {
                 }
 
                 $resource_group_file_contents .= $this->get_file_footer();
-
-                $file_path = strtolower($this->language_location . '/' . $project_locale->iso_639_1 . '/' . $this->conf['file_prefix'] . $resource_group->resource_group_name . $this->conf['file_suffix'] . '.php');
+                $file_name = $this->conf['file_prefix'] . $resource_group->resource_group_name . $this->conf['file_suffix'] . '.php';
+                $file_path = strtolower($this->language_location . '/' . $project_locale->iso_639_1 . '/' . $file_name);
+//                $this->print_message("\t" . $project_locale->iso_639_1 . '/' . $file_name);
                 file_put_contents($file_path, $resource_group_file_contents);
                 chmod($file_path, 0777);
             }
+            
         }
     }
 
@@ -318,7 +324,7 @@ class Lib_Languara {
         if (!isset($platform)) {
             throw new \Exception('error_plugin_problem');
         }
-        
+
         $first_name = readline($this->get_message_text('prompt_enter_first_name'));
         while (!preg_match("/^[a-zA-Z]+$/", trim($first_name))) {
             $this->print_message("prompt_first_name_validation");
@@ -363,29 +369,28 @@ class Lib_Languara {
         }
 
         $result = $this->fetch_endpoint_data('get_translation_quote', array('project_id' => $this->conf['project_id']), 'post', true);
-        if ($result->translation_count == 0) 
-        {    
+        if ($result->translation_count == 0) {
             throw new \Exception($this->get_message_text('error_add_more_languages'));
         }
-        
-        $this->print_message('notice_requested_translations', 'NOTICE',false);
+
+        $this->print_message('notice_requested_translations', 'NOTICE', false);
         $this->print_message($result->word_count . ' word(s)');
-        $this->print_message('notice_credits_remaining', 'NOTICE',false);
+        $this->print_message('notice_credits_remaining', 'NOTICE', false);
         $this->print_message($result->word_capacity . ' word(s)');
 
         // if there is no overage
         if ($result->overage_ind) {
-            $this->print_message('notice_current_rate', 'NOTICE',false);
+            $this->print_message('notice_current_rate', 'NOTICE', false);
             $this->print_message('$' . $result->feature_batch_price . ' for ' . $result->feature_batch . ' word(s)');
             $this->print_message('notice_plans_and_pricing', 'NOTICE');
             $this->print_message(PHP_EOL);
-            $this->print_message('notice_account_charge', 'NOTICE',false);
+            $this->print_message('notice_account_charge', 'NOTICE', false);
             $this->print_message('$' . $result->charge);
-            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE',false);
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE', false);
             $this->print_message($result->remaining_capacity_with_overage . ' word(s)');
         } else {
             $this->print_message('notice_no_charge', 'NOTICE');
-            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE',false);
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE', false);
             $this->print_message($result->remaining_capacity . ' word(s)');
         }
 
@@ -402,7 +407,7 @@ class Lib_Languara {
         $this->print_message('Order Confirmation Number: ' . $result->order_number);
         $this->print_message('success_content_translated_successfully', 'SUCCESS');
 
-        
+
         // prompt user to pull
         $answer = strtolower(readline($this->get_message_text('prompt_pull_content')));
         if ($answer != 'y') {
@@ -460,9 +465,9 @@ class Lib_Languara {
 
             // if the request faild throw an exception
             if ($error) {
-                throw new \Exception($this->get_message_text('error_languara_servers_respond') .' '. current(current($messages->errors)) . $error_message_suffix);
+                throw new \Exception($this->get_message_text('error_languara_servers_respond') . ' ' . current(current($messages->errors)) . $error_message_suffix);
             }
-            
+
             // if no errors, we need to extract the data
             if (is_object($result)) {
                 $result = current($result);
@@ -745,16 +750,17 @@ class Lib_Languara {
         
     }
 
-    public function print_message($message_code="", $message_status = "null", $output_eol = true) {
+    public function print_message($message_code = "", $message_status = "null", $output_eol = true) {
         if ($this->is_cli) {
             $message = $this->get_message_text($message_code);
             echo $this->color_text($message, $message_status);
             if ($output_eol) {
                 echo PHP_EOL;
             }
+            flush();
         }
     }
-    
+
     public function get_message_text($message_code) {
         return (isset($this->arr_messages[$message_code])) ? $this->arr_messages[$message_code] : $message_code;
     }
