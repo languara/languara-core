@@ -371,26 +371,26 @@ class Lib_Languara {
             throw new \Exception($this->get_message_text('error_add_more_languages'));
 
         echo PHP_EOL;
-        $this->print_message('notice_requested_translations', 'NOTICE');
-        echo $result->word_count . ' word(s)' . PHP_EOL;
-        $this->print_message('notice_credits_remaining', 'NOTICE');
-        echo $result->word_capacity . ' word(s)' . PHP_EOL . PHP_EOL;
+        $this->print_message('notice_requested_translations', 'NOTICE',false);
+        $this->print_message($result->word_count . ' word(s)');
+        $this->print_message('notice_credits_remaining', 'NOTICE',false);
+        $this->print_message($result->word_capacity . ' word(s)');
 
         // if there is no overage
         if ($result->overage_ind) {
-            $this->print_message('notice_current_rate', 'NOTICE');
-            echo '$' . $result->feature_batch_price . ' for ' . $result->feature_batch . ' word(s)' . PHP_EOL . PHP_EOL;
+            $this->print_message('notice_current_rate', 'NOTICE',false);
+            $this->print_message('$' . $result->feature_batch_price . ' for ' . $result->feature_batch . ' word(s)');
             $this->print_message('notice_plans_and_pricing', 'NOTICE');
-            echo PHP_EOL . PHP_EOL;
-            $this->print_message('notice_account_charge', 'NOTICE');
-            echo '$' . $result->charge . PHP_EOL . PHP_EOL;
-            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE');
-            echo $result->remaining_capacity_with_overage . ' word(s)' . PHP_EOL;
+            $this->print_message(PHP_EOL);
+            $this->print_message('notice_account_charge', 'NOTICE',false);
+            $this->print_message('$' . $result->charge);
+            $this->print_message('notice_credits_remain_after_transaction', 'NOTICE',false);
+            $this->print_message($result->remaining_capacity_with_overage . ' word(s)');
         } else {
             $this->print_message('notice_no_charge', 'NOTICE');
-            echo PHP_EOL . PHP_EOL;
+            $this->print_message(PHP_EOL);
             $this->print_message('notice_credits_remain_after_transaction', 'NOTICE');
-            echo $result->remaining_capacity . ' word(s)' . PHP_EOL;
+            $this->print_message($result->remaining_capacity . ' word(s)');
         }
 
 
@@ -404,19 +404,18 @@ class Lib_Languara {
         // translate project
         $result = $this->fetch_endpoint_data('translate_project', array('project_id' => $this->conf['project_id'], 'current_price' => $result->charge), 'post', true);
 
-        echo 'Order Confirmation Number: ' . $result->order_number . PHP_EOL;
-
-        echo PHP_EOL;
+        $this->print_message('Order Confirmation Number: ' . $result->order_number);
         $this->print_message('success_content_translated_successfully', 'SUCCESS');
-        echo PHP_EOL . PHP_EOL;
 
+        
         // prompt user to pull
         $answer = readline($this->get_message_text('prompt_pull_content'));
 
-        if ($answer != 'yes')
+        if ($answer != 'yes') {
             return true;
+        }
 
-        echo PHP_EOL;
+        $this->print_message();
         $this->download_and_process();
     }
 
