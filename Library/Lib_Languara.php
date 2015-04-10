@@ -22,6 +22,7 @@ class Lib_Languara {
     public $translations_count = 0;
     public $invalid_resource_cds = array();
     public $is_cli;
+    public $driver = null;
 
     function __construct() {
         $this->is_cli = (php_sapi_name() == "cli");
@@ -40,6 +41,12 @@ class Lib_Languara {
         // make sure the plugin has a account associated with it
         if (!$this->is_user_registered())
             return;
+        
+        // make sure a driver is loaded
+        if (!$this->driver) {
+            throw new \Exception($this->get_message_text('error_invalid_driver'));
+            return false;
+        }
 
         // sanity checks
         if (!$this->language_location) {
@@ -128,7 +135,7 @@ class Lib_Languara {
                 if ($dir->isDir()) {
                     $arr_locales[$dir->getFilename()] = array();
 
-                    $arr_locales[$dir->getFilename()] = $this->retrieve_resource_groups_and_translations($dir->getRealPath());
+                    $arr_locales[$dir->getFilename()] = $this->retrieve_resource_groups_and_translations($dir->getRealPath(), $dir->getBasename());
                 }
             }
         }
@@ -136,7 +143,7 @@ class Lib_Languara {
         return $arr_locales;
     }
 
-    protected function retrieve_resource_groups_and_translations($dir_path) {
+    protected function retrieve_resource_groups_and_translations($dir_path, $lang_name) {
         $dir_iterator = new \DirectoryIterator($dir_path);
         $arr_resource_groups = array();
 
@@ -151,33 +158,28 @@ class Lib_Languara {
             if ($arr_path_parts['extension'] != 'php')
                 continue;
 
-            if ($this->conf['storage_engine'] == 'php_assoc_array')
-                include ($file->getRealPath());
-            if ($this->conf['storage_engine'] == 'php_array')
-                $lang = include ($file->getRealPath());
-
-            // if file empty
-            if (!isset($lang))
-                continue;
-
             // remove the suffix of the file
-            $dir_name_filtered = $file->getBasename('.php');
+            $file_name = $file_name_filtered = $file->getBasename('.php');
             if ($this->conf['file_suffix']) {
-                $dir_name_filtered = strrev(preg_replace('/' . strrev($this->conf['file_suffix']) . '/', '', strrev($file->getBasename('.php')), 1));
+                $file_name_filtered = strrev(preg_replace('/' . strrev($this->conf['file_suffix']) . '/', '', strrev($file->getBasename('.php')), 1));
             }
+            
+            // get the translations
+            $lang = $this->driver->load($file->getBasename(), $lang_name)->decode()->get_translations();            
+            if (! $lang) continue;
 
             // add resource groups as keys
-            $arr_resource_groups[$dir_name_filtered] = $lang;
+            $arr_resource_groups[$file_name_filtered] = $lang;
 
             // count resource groups and translations
-            if (!isset($this->resource_groups[$dir_name_filtered]))
-                $this->resource_groups[$dir_name_filtered] = $dir_name_filtered;
+            if (!isset($this->resource_groups[$file_name_filtered]))
+                $this->resource_groups[$file_name_filtered] = $file_name_filtered;
             $this->translations_count += count($lang);
 
             // validate resource_cd
             foreach ($lang as $resource_cd => $translation) {
                 if (!$this->validate_resource_code($resource_cd) && !isset($this->invalid_resource_cds[$resource_cd]))
-                    $this->invalid_resource_cds[$resource_cd] = array('resource_cd' => $resource_cd, 'resource_group_name' => $dir_name_filtered);
+                    $this->invalid_resource_cds[$resource_cd] = array('resource_cd' => $resource_cd, 'resource_group_name' => $file_name_filtered);
             }
         }
 
@@ -213,42 +215,20 @@ class Lib_Languara {
             return false;
         }
 
-        // get project locales
-        //        $this->print_message("notice_retrieve_languages", 'NOTICE');
-
         $this->arr_project_locales = $this->fetch_endpoint_data('project_locale', null, 'get', true);
         if (!$this->arr_project_locales) {
             throw new \Exception($this->get_message_text('error_project_no_languages'));
             return false;
         }
-        //var_dump($this->arr_project_locales);
 
         $language_list_message = count((array) $this->arr_project_locales);
         $this->print_message('notice_languages_downloaded', 'NOTICE', false);
         $this->print_message($language_list_message);
-//        foreach ((array) $this->arr_project_locales as $tmp_lang) {
-//            $this->print_message("\t" . $tmp_lang->iso_639_1 . ' [' . $tmp_lang->locale_name_eng . ']');
-//        }
-
-
-        // get project resource groups
-//        if ($this->is_cli) {
-//            $this->print_message("notice_retrieve_resource_groups", 'NOTICE');
-//            echo PHP_EOL;
-//            sleep(2);
-//        }
 
         $this->arr_resource_groups = $this->fetch_endpoint_data('resource_group', null, 'get', true);
 
         $this->print_message('notice_resource_groups_downloaded', 'NOTICE', false);
         $this->print_message(count($this->arr_resource_groups));
-
-        // get project translations
-//        if ($this->is_cli) {
-//            $this->print_message("notice_retrieve_translations", 'NOTICE');
-//            echo PHP_EOL;
-//            sleep(2);
-//        }
 
         $this->arr_translations = $this->fetch_endpoint_data('translation', null, 'get', true);
 
@@ -296,25 +276,27 @@ class Lib_Languara {
         foreach ($this->arr_project_locales as $project_locale) {
             $this->print_message("+= ".$project_locale->iso_639_1,"NOTICE",false);
             $this->print_message(' [' . $project_locale->locale_name_eng . ']');
+            var_dump($this->arr_resource_groups);die;
+//            $this->driver->encode()->save('ace', $this->arr_resource_groups, $project_locale->iso_639_1);
             
-            $this->create_dir($this->language_location, strtolower($project_locale->iso_639_1));
-
+//            $this->create_dir($this->language_location, strtolower($project_locale->iso_639_1));
+//
             // process translations
             foreach ($this->arr_resource_groups as $resource_group) {
-
-                $resource_group_file_contents = $this->get_file_header();
-                foreach ($this->arr_translations as $translation) {
-                    if ($translation->resource_group_id == $resource_group->resource_group_id && $project_locale->locale_id == $translation->locale_id) {
-                        $resource_group_file_contents .= $this->get_file_content($translation->resource_cd, $translation->translation_txt);
-                    }
-                }
-
-                $resource_group_file_contents .= $this->get_file_footer();
-                $file_name = $this->conf['file_prefix'] . $resource_group->resource_group_name . $this->conf['file_suffix'] . '.php';
-                $file_path = strtolower($this->language_location . '/' . $project_locale->iso_639_1 . '/' . $file_name);
-//                $this->print_message("\t" . $project_locale->iso_639_1 . '/' . $file_name);
-                file_put_contents($file_path, $resource_group_file_contents);
-                chmod($file_path, 0777);
+//
+//                $resource_group_file_contents = $this->get_file_header();
+//                foreach ($this->arr_translations as $translation) {
+//                    if ($translation->resource_group_id == $resource_group->resource_group_id && $project_locale->locale_id == $translation->locale_id) {
+//                        $resource_group_file_contents .= $this->get_file_content($translation->resource_cd, $translation->translation_txt);
+//                    }
+//                }
+//
+//                $resource_group_file_contents .= $this->get_file_footer();
+//                $file_name = $this->conf['file_prefix'] . $resource_group->resource_group_name . $this->conf['file_suffix'] . '.php';
+//                $file_path = strtolower($this->language_location . '/' . $project_locale->iso_639_1 . '/' . $file_name);
+////                $this->print_message("\t" . $project_locale->iso_639_1 . '/' . $file_name);
+//                file_put_contents($file_path, $resource_group_file_contents);
+//                chmod($file_path, 0777);
             }
             
         }
