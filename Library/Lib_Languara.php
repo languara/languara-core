@@ -111,7 +111,7 @@ class Lib_Languara {
 
         $locales_count = count($arr_data);
         $resource_group_count = count($this->resource_groups);
-
+        
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
         if ($this->is_cli) {
             $this->print_message();
@@ -128,10 +128,22 @@ class Lib_Languara {
         $arr_local_data = array();
         $arr_data = $this->retrieve_resource_groups_and_locales();
         
-        foreach ($arr_data['locales'] as $locale) {
-            foreach ($arr_data['resource_groups'] as $resource_group) {
-                $translations = $this->driver->load($resource_group, $locale);
+        if (! $arr_data) throw new \Exception($this->get_message_text('error_no_local_content') . $this->language_location);
+        
+        foreach ($arr_data as $locale => $files) {
+            foreach ($files as $file) {                               
+                $resource_group = $file;
+                $file_path = null;
                 
+                if (is_array($file))
+                {
+                    $file_path = $file['file_path'];
+                    $resource_group = $file['resource_group_name'];
+                }
+                    
+                $translations = $this->driver->load($resource_group, $locale, $file_path);
+                
+                if (is_string($translations)) throw new \Exception($translations);
                 if (! $translations) continue;
                 $this->translations_count += count($translations);
                 
@@ -145,7 +157,7 @@ class Lib_Languara {
                 $this->resource_groups[$resource_group] = $resource_group;
             }
         }
-
+//        var_dump($arr_local_data);die;
         return $arr_local_data;
     }
 
@@ -158,7 +170,7 @@ class Lib_Languara {
             if ($dir->getFilename() == '.' || $dir->getFilename() == '..' || $dir->getFilename() == 'language_backup')
                 continue;
             
-            $arr_data['locales'][$dir->getBasename()] = $dir->getBasename();
+            $arr_data[$dir->getBasename()] = array();
             
             $dir_iterator = new \DirectoryIterator($dir->getRealPath());
             
@@ -175,7 +187,7 @@ class Lib_Languara {
                     $file_name_filtered = strrev(preg_replace('/' . strrev($this->conf['file_suffix']) . '/', '', strrev($file->getBasename('.php')), 1));
                 }
                 
-                $arr_data['resource_groups'][$file_name_filtered] = $file_name_filtered;
+                $arr_data[$dir->getBasename()][$file_name_filtered] = $file_name_filtered;
             }
         }
 
@@ -277,7 +289,9 @@ class Lib_Languara {
             foreach ($this->arr_resource_groups as $resource_group) {
                 $file_name = $this->conf['file_prefix'] . $resource_group->resource_group_name . $this->conf['file_suffix'];
                 $arr_translations = $this->get_resource_group_translations($this->arr_translations, $project_locale, $resource_group);
-                $this->driver->save($file_name, $arr_translations, $project_locale->iso_639_1);
+                $result = $this->driver->save($file_name, $arr_translations, $project_locale->iso_639_1);
+                
+                if ($result !== true) throw new \Exception($this->get_message_text($result));
             }
             
         }
@@ -298,7 +312,7 @@ class Lib_Languara {
 
     public function register($platform = null) {
         if (!isset($platform)) {
-            throw new \Exception('error_plugin_problem');
+            throw new \Exception($this->get_message_text('error_plugin_problem'));
         }
 
         $first_name = readline($this->get_message_text('prompt_enter_first_name'));
@@ -326,7 +340,7 @@ class Lib_Languara {
         }
 
         $config = $this->fetch_endpoint_data('register', array('user_first_name' => $first_name, 'user_last_name' => $last_name, 'user_email_address' => $email, 'user_password' => $password, 'platform' => $platform), 'post', true);
-
+        
         // now update the config files
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
     }
@@ -438,7 +452,7 @@ class Lib_Languara {
             if (isset($result->data) && !is_object($result->data) && $result->data == 1) {
                 $error_message_suffix = PHP_EOL . $this->get_message_text('error_config_file_help_info');
             }
-
+            
             // if the request faild throw an exception
             if ($error) {
                 throw new \Exception($this->get_message_text('error_languara_servers_respond') . ' ' . current(current($messages->errors)) . $error_message_suffix);
