@@ -345,7 +345,7 @@ class Lib_Languara {
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
     }
 
-    public function translate() {
+    public function translate($translate_method) {
         // make sure the plugin has a account associated with it
         if (!$this->is_user_registered()) {
             return false;
@@ -358,11 +358,11 @@ class Lib_Languara {
             $this->upload_local_translations();
         }
 
-        $result = $this->fetch_endpoint_data('get_translation_quote', array('project_id' => $this->conf['project_id']), 'post', true);
+        $result = $this->fetch_endpoint_data('get_translation_quote', array('project_id' => $this->conf['project_id'], 'translation_method' => $translate_method), 'post', true);
         if ($result->translation_count == 0) {
             throw new \Exception($this->get_message_text('error_add_more_languages'));
         }
-
+        
         $this->print_message('notice_requested_translations', 'NOTICE', false);
         $this->print_message($result->word_count . ' word(s)');
         $this->print_message('notice_credits_remaining', 'NOTICE', false);
@@ -392,7 +392,7 @@ class Lib_Languara {
         }
 
         // translate project
-        $result = $this->fetch_endpoint_data('translate_project', array('project_id' => $this->conf['project_id'], 'current_price' => $result->charge), 'post', true);
+        $result = $this->fetch_endpoint_data('translate_project', array('project_id' => $this->conf['project_id'], 'current_price' => $result->charge, 'translation_method' => $translate_method), 'post', true);
 
         $this->print_message('Order Confirmation Number: ' . $result->order_number);
         $this->print_message('success_content_translated_successfully', 'SUCCESS');
@@ -433,12 +433,12 @@ class Lib_Languara {
 //		print "\n\nfetch_endpoint_data($endpoint_name)\n";
 //		print "\naccessing endpoint URL: $url\n". PHP_EOL;
 //		print "CLIENT: GOT RESPONSE\n". $response ."\n";
-
+        
         $error = true;
         if ($json_decode_ind) {
             $result = json_decode($response);
             $error_message_suffix = '';
-
+            
             // throw an error if the server doesn't return anything
             if (!is_object($result)) {
                 throw new \Exception($this->get_message_text('error_general_request_error'));
