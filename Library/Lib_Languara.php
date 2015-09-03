@@ -78,34 +78,6 @@ class Lib_Languara {
             return;
         }
 
-        // show error message if there are invalid codes
-        if ($this->invalid_resource_cds) {
-            $this->print_message('error_malformed_resource_cd', 'FAILURE');
-
-            $i = 0;
-
-            // show resource codes with errors in them
-            foreach ($this->invalid_resource_cds as $resource_cd) {
-                if ($i++ == 10) {
-                    break;
-                }
-                $this->print_message($resource_cd['resource_group_name'] . '.' . $resource_cd['resource_cd']);
-            }
-
-            // if there are more then 10 resource codes
-            if (count($this->invalid_resource_cds) > 10) {
-                $this->print_message('...and ' . (count($this->invalid_resource_cds) - 10) . ' more!');
-            }
-
-
-            $this->print_message('notice_resource_cd_help_link', 'NOTICE');
-
-            // proceed only if user confirms
-            $proceed = strtolower(readline($this->get_message_text('prompt_proceed_with_upload')));
-            if ($proceed != 'y')
-                throw new \Exception($this->get_message_text('error_action_aborted'));
-        }
-
         // get project locales
         $this->print_message("notice_pushing_content", 'NOTICE');
 
@@ -147,17 +119,11 @@ class Lib_Languara {
                 if (! $translations) continue;
                 $this->translations_count += count($translations);
                 
-                // validate resource_cd
-                foreach ($translations as $resource_cd => $translation) {
-                    if (!$this->validate_resource_code($resource_cd) && !isset($this->invalid_resource_cds[$resource_cd]))
-                        $this->invalid_resource_cds[$resource_cd] = array('resource_cd' => $resource_cd, 'resource_group_name' => $resource_group);
-                }
-                
                 $arr_local_data[$locale][$resource_group] = $translations;
                 $this->resource_groups[$resource_group] = $resource_group;
             }
         }
-//        var_dump($arr_local_data);die;
+        
         return $arr_local_data;
     }
 
