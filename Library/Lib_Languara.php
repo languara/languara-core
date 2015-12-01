@@ -299,16 +299,59 @@ class Lib_Languara {
             $email = readline($this->get_message_text('prompt_enter_email'));
         }
 
-        $password = readline($this->get_message_text('prompt_enter_password'));
-        while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($password))) {
-            $this->print_message("prompt_password_validation");
-            $password = readline($this->get_message_text('prompt_enter_password'));
-        }
+        $password = $this->prompt_silent();
 
         $config = $this->fetch_endpoint_data('register', array('user_first_name' => $first_name, 'user_last_name' => $last_name, 'user_email_address' => $email, 'user_password' => $password, 'platform' => $platform), 'post', true);
         
         // now update the config files
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
+    }
+
+    /**
+     * Interactively prompts for input without echoing to the terminal.
+     * Requires a bash shell or Windows and won't work with
+     * safe_mode settings (Uses `shell_exec`)
+     */
+    protected function prompt_silent($prompt = "Enter Password:") {        
+        $password = '';
+        if (preg_match('/^win/i', PHP_OS)) {
+            // this is untested
+            $vbscript = sys_get_temp_dir() . 'prompt_password.vbs';
+            file_put_contents(
+                $vbscript, 'wscript.echo(InputBox("'
+                    . addslashes($prompt)
+                    . '", "", "password here"))');
+            $command = "cscript //nologo " . escapeshellarg($vbscript);
+            $password = rtrim(shell_exec($command));
+            unlink($vbscript);
+            return $password;
+        } else {
+
+            $skipped_first_iteration_ind = false;
+            $command = "/usr/bin/env bash -c 'echo OK'";
+
+            if (rtrim(shell_exec($command)) !== 'OK') {
+                trigger_error("Can't invoke bash");
+                return;
+            }
+
+            $this->print_message("prompt_enter_password", null, false);
+            while (!preg_match("/^([a-zA-Z0-9@*#]{6,15})$/", trim($password))) { 
+
+                if ($skipped_first_iteration_ind) {
+                    $this->print_message("prompt_password_validation", 'FAILURE');      
+                    $this->print_message('prompt_enter_password', null, false);
+                }
+
+                shell_exec("stty -echo;");
+                $password = trim(fgets(STDIN));
+                
+                shell_exec("stty echo;");
+                $skipped_first_iteration_ind = true;
+            }
+
+            return $password;
+        }
     }
 
     public function translate($translate_method) {
@@ -374,6 +417,13 @@ class Lib_Languara {
         $this->download_and_process();
     }
 
+    public function connect($public_key) {
+        $config = $this->fetch_endpoint_data('connect_plugin', array('project_api_key' => $public_key), 'post', true);
+
+        // now update the config files
+        $this->update_config_file($this->config_files['project_config'], $config->project_config);
+    }
+
     protected function update_config_file($file, $config) {
         if (!file_put_contents($file, $config))
             throw new \Exception($this->get_message_text('error_config_file_error'));
@@ -391,14 +441,15 @@ class Lib_Languara {
         } else {
             $url = $this->prepare_request_url($endpoint_name, $parameters);
 
-            $request_vars = http_build_query($parameters);
+            // $request_vars = http_build_query($parameters);
+            $request_vars = ($parameters);
 
             $response = $this->curl_post($url, $request_vars);
         }
 
-//		print "\n\nfetch_endpoint_data($endpoint_name)\n";
-//		print "\naccessing endpoint URL: $url\n". PHP_EOL;
-//		print "CLIENT: GOT RESPONSE\n". $response ."\n";
+//      print "\n\nfetch_endpoint_data($endpoint_name)\n";
+//      print "\naccessing endpoint URL: $url\n". PHP_EOL;
+//      print "CLIENT: GOT RESPONSE\n". $response ."\n";
         
         $error = true;
         if ($json_decode_ind) {
@@ -441,15 +492,16 @@ class Lib_Languara {
 
         if ($this->conf) {
             $url .= "?project_api_key=" . $this->conf['project_api_key']
-                    . "&project_id=" . $this->conf['project_id'];
+                    // . "&project_id=" . $this->conf['project_id']
+                    ;
 
             $url_sign = '&';
         }
 
-        if ($this->conf) {
-            $url .= $url_sign . 'project_deployment_id=' . $this->conf['project_deployment_id'];
-            $url_sign = '&';
-        }
+        // if ($this->conf) {
+        //     $url .= $url_sign . 'project_deployment_id=' . $this->conf['project_deployment_id'];
+        //     $url_sign = '&';
+        // }
 
         // if request id present add it
         if ($this->external_request_id) {
@@ -464,7 +516,7 @@ class Lib_Languara {
 
         // Create the request signature base and encode using the secret
         //
-		$signature_base = $url . $request_data_serialized;
+        $signature_base = $url . $request_data_serialized;
         $signature = 'randomString';
 
         if ($this->conf) {
@@ -473,10 +525,10 @@ class Lib_Languara {
 
         // append request signature to request
         //
-		$url .= $url_sign . '_rs=' . $signature;
-//		print "CLIENT: signature base: $signature_base\n";
-//		print "CLIENT: generated signature: $signature\n";
-//		print "opening $endpoint_name: ";
+        $url .= $url_sign . '_rs=' . $signature;
+//      print "CLIENT: signature base: $signature_base\n";
+//      print "CLIENT: generated signature: $signature\n";
+        // print "opening $endpoint_name: ". $url;
         return $url;
     }
 
@@ -489,38 +541,27 @@ class Lib_Languara {
     }
 
     private function curl_doRequest($method, $url, $vars, $callback = false) {
-        if (!function_exists('curl_init'))
-            throw new \Exception($this->get_message_text('error_curl_not_enabled'));
+        $client = new \GuzzleHttp\Client(['verify' => false]);
 
-        // configure curl request
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'languara_api_client');
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        if ($method == 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $vars);
-        }
-
-        // Don't check ssl peers for now
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-        $data = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($data) {
-            if ($callback) {
-                return call_user_func($callback, $data);
-            } else {
-                return $data;
+        try {
+            if (strtolower($method) === 'post') 
+            {
+                $response = $client->request('POST', $url, ['form_params' => $vars]);
             }
+            else
+            {
+                $response = $client->request('GET', $url);   
+            }
+        } catch (\GuzzleHttp\Exception\BadResponseException $e) {
+            return $e->getResponse()->getBody()->getContents();
+        }
+        
+        $data = $response->getBody()->getContents();
+
+        if ($callback) {
+            return call_user_func($callback, $data);
         } else {
-            throw new \Exception($error);
+            return $data;
         }
     }
 
