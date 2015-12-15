@@ -417,8 +417,8 @@ class Lib_Languara {
         $this->download_and_process();
     }
 
-    public function connect($public_key) {
-        $config = $this->fetch_endpoint_data('connect_plugin', array('project_api_key' => $public_key), 'post', true);
+    public function connect($private_key) {
+        $config = $this->fetch_endpoint_data('connect_plugin', array('project_private_key' => $private_key), 'post', true);
 
         // now update the config files
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
@@ -447,9 +447,9 @@ class Lib_Languara {
             $response = $this->curl_post($url, $request_vars);
         }
 
-//      print "\n\nfetch_endpoint_data($endpoint_name)\n";
-//      print "\naccessing endpoint URL: $url\n". PHP_EOL;
-//      print "CLIENT: GOT RESPONSE\n". $response ."\n";
+        // print "\n\nfetch_endpoint_data($endpoint_name)\n";
+        // print "\naccessing endpoint URL: $url\n". PHP_EOL;
+        // print "CLIENT: GOT RESPONSE\n". $response ."\n";
         
         $error = true;
         if ($json_decode_ind) {
