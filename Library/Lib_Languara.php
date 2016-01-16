@@ -84,7 +84,7 @@ class Lib_Languara {
         $locales_count = count($arr_data);
         $resource_group_count = count($this->resource_groups);
         
-        $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data), 'post', true);
+        $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data, 'project_deployment_id' => $this->conf['project_deployment_id']), 'post', true);
         if ($this->is_cli) {
             $this->print_message();
             $this->print_message('notice_languages_pushed', 'NOTICE', false);
@@ -133,7 +133,7 @@ class Lib_Languara {
         
         foreach ($lang_dir_iterator as $dir) {
             // skip system files
-            if ($dir->getFilename() == '.' || $dir->getFilename() == '..' || $dir->getFilename() == 'language_backup')
+            if ($dir->getFilename() == '.' || $dir->getFilename() == '..' || $dir->getFilename() == 'language_backup' || ! $dir->isDir())
                 continue;
             
             $arr_data[$dir->getBasename()] = array();
@@ -447,9 +447,9 @@ class Lib_Languara {
             $response = $this->curl_post($url, $request_vars);
         }
 
-        // print "\n\nfetch_endpoint_data($endpoint_name)\n";
-        // print "\naccessing endpoint URL: $url\n". PHP_EOL;
-        // print "CLIENT: GOT RESPONSE\n". $response ."\n";
+//      print "\n\nfetch_endpoint_data($endpoint_name)\n";
+//      print "\naccessing endpoint URL: $url\n". PHP_EOL;
+//      print "CLIENT: GOT RESPONSE\n". $response ."\n";
         
         $error = true;
         if ($json_decode_ind) {
