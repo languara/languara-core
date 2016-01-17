@@ -417,8 +417,12 @@ class Lib_Languara {
         $this->download_and_process();
     }
 
-    public function connect($private_key) {
-        $config = $this->fetch_endpoint_data('connect_plugin', array('project_private_key' => $private_key), 'post', true);
+    public function connect($private_key, $platform = null) {
+        if (!isset($platform)) {
+            throw new \Exception($this->get_message_text('error_plugin_problem'));
+        }
+        
+        $config = $this->fetch_endpoint_data('connect_plugin', array('project_private_key' => $private_key, 'platform_name' => $platform), 'post', true);
 
         // now update the config files
         $this->update_config_file($this->config_files['project_config'], $config->project_config);
