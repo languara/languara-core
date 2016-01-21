@@ -85,6 +85,8 @@ class Lib_Languara {
         $resource_group_count = count($this->resource_groups);
         
         $data = $this->fetch_endpoint_data('upload_translations', array('local_data' => $arr_data, 'project_deployment_id' => $this->conf['project_deployment_id']), 'post', true);
+        $data->resource_group_count = ($resource_group_count < $data->resource_group_count) ? $resource_group_count : $data->resource_group_count ;
+
         if ($this->is_cli) {
             $this->print_message();
             $this->print_message('notice_languages_pushed', 'NOTICE', false);
