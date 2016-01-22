@@ -144,7 +144,7 @@ class Lib_Languara {
             
             foreach ($dir_iterator as $file) {
                 // skip system files
-                if ($file->getFilename() == '.' || $file->getFilename() == '..' || $file->getFilename() == 'language_backup')
+                if ($file->getFilename() == '.' || $file->getFilename() == '..' || $file->getFilename() == 'language_backup' || $file->getExtension() !== 'php')
                     continue;
 
                 $arr_path_parts = pathinfo($file->getRealPath());
